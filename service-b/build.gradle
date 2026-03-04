@@ -1,0 +1,41 @@
+plugins {
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+    id 'com.google.cloud.tools.jib'
+}
+
+dependencies {
+    implementation project(':common')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    implementation 'com.baomidou:mybatis-plus-boot-starter:3.5.7'
+    runtimeOnly 'mysql:mysql-connector-j:8.0.33'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+def registryUrl = System.getenv('REGISTRY_URL') ?: 'registry.example.com'
+def imageNamespace = System.getenv('IMAGE_NAMESPACE') ?: 'my-team/my-project'
+def commitTag = System.getenv('CI_COMMIT_SHORT_SHA') ?: 'dev'
+
+jib {
+    from {
+        image = 'eclipse-temurin:17-jre'
+    }
+    to {
+        image = "${registryUrl}/${imageNamespace}/service-b"
+        tags = [commitTag, 'latest'] as Set<String>
+    }
+    container {
+        mainClass = 'com.example.serviceb.ServiceBApplication'
+        ports = ['8081']
+        jvmFlags = ['-Xms512m', '-Xmx512m']
+    }
+}
+
+

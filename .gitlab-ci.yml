@@ -1,0 +1,58 @@
+stages:
+  - build
+  - docker
+  - scan
+
+variables:
+  REGISTRY_URL: "$REGISTRY_URL"
+  IMAGE_NAMESPACE: "$IMAGE_NAMESPACE"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
+
+build:
+  stage: build
+  image: gradle:8.7-jdk17
+  script:
+    - gradle clean build
+  artifacts:
+    paths:
+      - build
+    expire_in: 1 week
+
+docker:order-command-service:
+  stage: docker
+  image: gradle:8.7-jdk17
+  needs:
+    - build
+  script:
+    - gradle :order-command-service:jib
+  variables:
+    REGISTRY_USERNAME: "$REGISTRY_USERNAME"
+    REGISTRY_PASSWORD: "$REGISTRY_PASSWORD"
+
+docker:order-query-service:
+  stage: docker
+  image: gradle:8.7-jdk17
+  needs:
+    - build
+  script:
+    - gradle :order-query-service:jib
+  variables:
+    REGISTRY_USERNAME: "$REGISTRY_USERNAME"
+    REGISTRY_PASSWORD: "$REGISTRY_PASSWORD"
+
+scan:
+  stage: scan
+  image: aquasec/trivy:0.56.2
+  needs:
+    - docker:order-command-service
+    - docker:order-query-service
+  script:
+    - mkdir -p reports
+    - trivy image --severity HIGH,CRITICAL --format json --output reports/trivy-order-command-service.json "${REGISTRY_URL}/${IMAGE_NAMESPACE}/order-command-service:${CI_COMMIT_SHORT_SHA}"
+    - trivy image --severity HIGH,CRITICAL --format json --output reports/trivy-order-query-service.json "${REGISTRY_URL}/${IMAGE_NAMESPACE}/order-query-service:${CI_COMMIT_SHORT_SHA}"
+  artifacts:
+    paths:
+      - reports/trivy-order-command-service.json
+      - reports/trivy-order-query-service.json
+    expire_in: 1 week
+

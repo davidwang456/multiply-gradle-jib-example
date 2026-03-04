@@ -1,0 +1,8 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    // 在此添加公共依赖，例如工具库或 Lombok 等
+}
+

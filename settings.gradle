@@ -1,0 +1,6 @@
+rootProject.name = 'multiply-gradle-jib-example'
+
+include 'common'
+include 'order-command-service'
+include 'order-query-service'
+

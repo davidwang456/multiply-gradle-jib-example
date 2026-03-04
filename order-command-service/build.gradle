@@ -15,12 +15,6 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-sourceSets {
-    main {
-        java.srcDirs = ['../service-a/src/main/java']
-    }
-}
-
 tasks.named('test') {
     useJUnitPlatform()
 }
